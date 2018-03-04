@@ -33,6 +33,8 @@ typedef enum {
     void (^progressBloc)(CMTime t);
     id timeObserver;
     bool isPaused;
+    MPNowPlayingInfoCenter *infoCenter;
+    
 }
 
 
@@ -98,6 +100,7 @@ typedef enum {
     if ( self = [super init] )
     {
         channel = chan;
+        infoCenter = [MPNowPlayingInfoCenter defaultCenter];
         
         __weak RadAudioPlugin *weakSelf = self;
         progressBloc = ^(CMTime t){
@@ -156,11 +159,20 @@ typedef enum {
 }
 
 -(void)seekForwardFromRemote{
-    [self seekDelta:[NSNumber numberWithInt:10]];
+    [self seekDelta:[NSNumber numberWithInt:15]];
 }
 
 -(void)seekBackwardFromRemote{
-    [self seekDelta:[NSNumber numberWithInt:-10]];
+    [self seekDelta:[NSNumber numberWithInt:-15]];
+}
+
+
+-(void)setupNotifications{
+    NSNotificationCenter* nCenter = [NSNotificationCenter defaultCenter];
+    [nCenter addObserver:self selector:@selector(handleInterruption:) name:AVAudioSessionInterruptionNotification object:nil];
+    [nCenter addObserver:self selector:@selector(handleTimeJumped:) name:AVPlayerItemTimeJumpedNotification object:nil];
+    [nCenter addObserver:self selector:@selector(handleDidFinishPlaying:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+    [nCenter addObserver:self selector:@selector(handlePlaybackStalled:) name:AVPlayerItemPlaybackStalledNotification object:nil];
 }
 
 -(void)handleInterruption:(NSNotification*)note{
@@ -178,13 +190,16 @@ typedef enum {
     }
 }
 
--(void)setupNotifications{
-    NSNotificationCenter* nCenter = [NSNotificationCenter defaultCenter];
-    [nCenter addObserver:self selector:@selector(handleInterruption) name:AVAudioSessionInterruptionNotification object:nil];
+-(void)handleTimeJumped:(NSNotification* )note{
+    NSLog(@"TimeDidJump");
 }
 
--(void)handleInterruption{
-    NSLog(@"Should pause if playing...");
+-(void)handleDidFinishPlaying:(NSNotification*)note{
+    NSLog(@"DidFinishPlaying");
+}
+
+-(void)handlePlaybackStalled:(NSNotification*)note{
+    NSLog(@"Playback stalled...");
 }
 
 
@@ -214,6 +229,11 @@ typedef enum {
     CMTime t = CMTimeMake([timeInSeconds intValue], 1);     //1 means each unit of value is 1 second.
     [player seekToTime:t completionHandler:^(BOOL finished){
         if (finished) {
+            
+            NSMutableDictionary *nfo = [NSMutableDictionary dictionaryWithDictionary:[infoCenter nowPlayingInfo]];
+            [nfo setObject:[NSNumber numberWithFloat:CMTimeGetSeconds([player currentTime])] forKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
+            [infoCenter setNowPlayingInfo:nfo];
+            
             [weakSelf sendEventToFlutter:kSeekComplete
                            withArguments:[NSDictionary dictionaryWithObjectsAndKeys:timeInSeconds, [self FormatRadAudioArgKeyToString:kCurrentPlaybackPosition], nil]];
         } else {
@@ -228,6 +248,14 @@ typedef enum {
     __weak RadAudioPlugin *weakSelf = self;
     [player seekToTime:newTime completionHandler:^(BOOL finished){
         if ( finished ){
+            float currentTime = CMTimeGetSeconds([player currentTime]);
+            if ( currentTime < 0.0 ){
+                currentTime = 0.0;
+            }
+            
+            NSMutableDictionary *nfo = [NSMutableDictionary dictionaryWithDictionary:[infoCenter nowPlayingInfo]];
+            [nfo setObject:[NSNumber numberWithFloat:currentTime] forKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
+            [infoCenter setNowPlayingInfo:nfo];
             // tell flutter the seek is complete ...
             [weakSelf sendEventToFlutter:kSeekComplete
                            withArguments:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:newTime.value/newTime.timescale], [self FormatRadAudioArgKeyToString:kCurrentPlaybackPosition], nil]];
@@ -241,6 +269,7 @@ typedef enum {
 -(void)play{
     if ( session == nil ){
         [self setupAudioSession];
+        [self setupCommandCenter];
     }
     
     if ( isPaused ){
@@ -249,18 +278,18 @@ typedef enum {
         return;
     }
     
-  
-    [player play];
+    if(@available(iOS 11, *)){
+        [infoCenter setPlaybackState:MPNowPlayingPlaybackStatePlaying];
+    }
     
-    [self setupCommandCenter];
-    MPNowPlayingInfoCenter *infoCenter = [MPNowPlayingInfoCenter defaultCenter];
-    [infoCenter setNowPlayingInfo:[NSDictionary dictionaryWithObjectsAndKeys:
-                                   @"The Title", MPMediaItemPropertyTitle,
-                                   @"The Artist", MPMediaItemPropertyArtist, nil]];
+    [player play];
+    NSMutableDictionary *nfo = [NSMutableDictionary dictionaryWithDictionary:[infoCenter nowPlayingInfo]];
+    [nfo setObject:[NSNumber numberWithFloat:CMTimeGetSeconds([player currentTime])] forKey:MPNowPlayingInfoPropertyElapsedPlaybackTime];
+    [nfo setObject:[NSNumber numberWithInt:1] forKey:MPNowPlayingInfoPropertyPlaybackRate];
+    [infoCenter setNowPlayingInfo:nfo];
     
     
     [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-    
     
     CMTime interval = CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC);
     dispatch_queue_t mainQueue = dispatch_get_main_queue();
@@ -272,6 +301,9 @@ typedef enum {
     }
 }
 
+
+
+
 -(void)stop{
     if ( player.error == false ){
         [player pause];
@@ -281,6 +313,13 @@ typedef enum {
         }
         player = nil;
         [self sendEventToFlutter:kPlaybackStopped];
+        
+        if(@available(iOS 11, *)){
+            [infoCenter setPlaybackState:MPNowPlayingPlaybackStateStopped];
+        }
+        
+        [[UIApplication sharedApplication] endReceivingRemoteControlEvents];
+        
         return;
     }
     
@@ -292,6 +331,10 @@ typedef enum {
     if (player.rate > 0 && player.error == false){
         [player pause];
         isPaused = true;
+        MPNowPlayingInfoCenter *infoCenter = [MPNowPlayingInfoCenter defaultCenter];
+        if(@available(iOS 11, *)){
+            [infoCenter setPlaybackState:MPNowPlayingPlaybackStatePaused];
+        }
         [self sendEventToFlutter:kPaused withArguments:nil];
     } else {
         [self sendErrorMessageToFlutter:@"Pause when nothing is playing" andCode:kPlayerBadState];
@@ -303,10 +346,15 @@ typedef enum {
     
     AVAsset* asset = [AVAsset assetWithURL:[NSURL URLWithString:[args objectForKey:@"audioUri"]]];
     
-    NSArray<NSString*>* assetKeys = [NSArray arrayWithObjects:@"duration", @"playable", @"providesPreciseDurationAndTiming", nil];
+    NSArray<NSString*>* assetKeys =
+        [NSArray arrayWithObjects:@"duration", @"playable", @"providesPreciseDurationAndTiming", nil];
+    
     AVPlayerItem* item = [AVPlayerItem playerItemWithAsset:asset automaticallyLoadedAssetKeys:assetKeys];
     
     player = [AVPlayer playerWithPlayerItem:item];
+    
+    UIImage* img = [UIImage imageWithContentsOfFile:[args objectForKey:@"imageUri"]];
+    MPMediaItemArtwork *artwork = [[MPMediaItemArtwork alloc] initWithImage:img];
     
     __weak RadAudioPlugin *weakSelf = self;
     
@@ -364,7 +412,7 @@ typedef enum {
         switch (status) {
             case AVKeyValueStatusLoaded:
                 duration = CMTimeGetSeconds([asset duration]);
-                NSLog(@"%.2f", duration);
+               NSLog(@"%.2f", duration);
                 break;
             case AVKeyValueStatusFailed:
                 NSLog(@"duration: failed");
@@ -379,14 +427,22 @@ typedef enum {
         }
         
         if ( isPlayable ){
-           // [weakSelf play];
-            [weakSelf
-             sendEventToFlutter:kReadyToPlay
-             withArguments:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:duration], [self FormatRadAudioArgKeyToString:kDuration], nil]];
+            
+            [infoCenter setNowPlayingInfo:[NSDictionary dictionaryWithObjectsAndKeys:
+                                           [args objectForKey:@"titleText"], MPMediaItemPropertyTitle,
+                                           [args objectForKey:@"subtitleText"], MPMediaItemPropertyArtist,
+                                           [NSNumber numberWithFloat:duration], MPMediaItemPropertyPlaybackDuration,
+                                           [NSNumber numberWithInt:0], MPNowPlayingInfoPropertyPlaybackRate,
+                                           artwork, MPMediaItemPropertyArtwork, nil]];
+            
+            [weakSelf sendEventToFlutter:kReadyToPlay
+                           withArguments:[NSDictionary dictionaryWithObjectsAndKeys:
+                                          [NSNumber numberWithFloat:duration], [self FormatRadAudioArgKeyToString:kDuration], nil]];
         }
         
     }];
 }
+
 
 -(void)sendErrorMessageToFlutter:(NSString *)errorMessage andCode:(RadAudioErrors)code {
     [FlutterError
