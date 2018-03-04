@@ -62,7 +62,7 @@ class RadAudio {
     //print("Heard a call!");
     switch (call.method){
       case "event":
-        print(call.method);
+        //print(call.method);
 
         Map<String, dynamic> args = call.arguments;
         String eventType = args[EVENT_TYPE_KEY];

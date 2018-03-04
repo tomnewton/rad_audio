@@ -156,11 +156,11 @@ typedef enum {
 }
 
 -(void)seekForwardFromRemote{
-    [self seekDelta:[NSNumber numberWithInt:15]];
+    [self seekDelta:[NSNumber numberWithInt:10]];
 }
 
 -(void)seekBackwardFromRemote{
-    [self seekDelta:[NSNumber numberWithInt:-15]];
+    [self seekDelta:[NSNumber numberWithInt:-10]];
 }
 
 -(void)handleInterruption:(NSNotification*)note{
