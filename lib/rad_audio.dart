@@ -26,9 +26,27 @@ class RadAudioErrorTypes {
   static const String ASSET_PROPERTY_LOADING_ERROR = "ASSET_PROPERTY_LOADING_ERROR";
 }
 
+class RadAudioPrepareToPlayMsg{
+  String imageUri;
+  String audioUri;
+  String titleText;
+  String subtitleText;
+
+  RadAudioPrepareToPlayMsg(this.audioUri, this.imageUri, this.titleText, this.subtitleText);
+
+  Map<String, String> toMap(){
+    return new Map<String, String>.from({
+      "audioUri": this.audioUri,
+      "imageUri": this.imageUri,
+      "titleText": this.titleText,
+      "subtitleText": this.subtitleText,
+    });
+  }
+}
+
 class RadAudio {
   final IAudioPlayer player;
-
+  StreamController _sc;
 
   static const MethodChannel _channel =
   const MethodChannel('rad_audio');
@@ -36,8 +54,10 @@ class RadAudio {
   /*static Future<String> get platformVersion =>
       _channel.invokeMethod('getPlatformVersion');*/
 
-  static void prepareToPlay(Map<String, String> args) =>
-      _channel.invokeMethod("prepareToPlay", [args]);
+ /* static void prepareToPlay(RadAudioPrepareToPlayMsg msg) {
+    _channel.invokeMethod("prepareToPlay", [msg.toMap()]);
+  }*/
+
 
   static void play() =>
       _channel.invokeMethod("play");
@@ -54,8 +74,18 @@ class RadAudio {
   static void seekToTime(int seconds) =>
       _channel.invokeMethod("seekToTime", [seconds]);
 
-  RadAudio(this.player){
+
+
+  RadAudio({this.player}){
     _channel.setMethodCallHandler(this.handler);
+    _sc = new StreamController(onListen: onListen, onPause: onPause, onCancel: onCancel, onResume: onResume);
+  }
+
+  Stream get stream => _sc.stream;//.asBroadcastStream(onListen: onSubscriptionListen, onCancel: onSubscriptionCancel);
+
+  Stream<dynamic> prepareToPlay(RadAudioPrepareToPlayMsg msg){
+    _channel.invokeMethod("prepareToPlay", [msg.toMap()]);
+    return _sc.stream;
   }
 
   Future<dynamic> handler(MethodCall call) async {
@@ -68,31 +98,65 @@ class RadAudio {
         String eventType = args[EVENT_TYPE_KEY];
 
         if ( eventType == RadAudioEventTypes.READY_TO_PLAY ){
-          //print("Heard Event: Ready To Play!");
-          //contains the duration
           double duration = args[RadAudioArgKeys.DURATION];
-          player.readyToPlay(duration);
+          player?.readyToPlay(duration);
+          _send({"eventType": eventType, "duration": duration});
         } else if ( eventType == RadAudioEventTypes.PROGRESS_EVENT ){
-          //print("Progress @ ${call.arguments[1]} seconds");
-          double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
-          player.playbackProgress(pos);
+          int pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+          _send({"eventType": eventType, "position": pos.toDouble()});
+          player?.playbackProgress(pos.toDouble());
         } else if ( eventType == RadAudioEventTypes.PLAYBACK_STARTED ){
-          player.playbackStarted();
+          player?.playbackStarted();
+          _send({"eventType": eventType});
         } else if ( eventType == RadAudioEventTypes.PLAYBACK_STOPPED ){
-          player.playbackStopped();
+          player?.playbackStopped();
+          _send({"eventType": eventType});
         } else if ( eventType == RadAudioEventTypes.SEEK_COMPLETE){
           double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
-          player.playbackProgress(pos);
+          player?.playbackProgress(pos);
+          _send({"eventType": eventType, "position": pos});
         } else if ( eventType == RadAudioEventTypes.SEEKING){
-          player.isSeeking(true);
+          player?.isSeeking(true);
+          _send({"eventType": eventType});
         } else if ( eventType == RadAudioEventTypes.SEEK_COMPLETE){
-          player.isSeeking(false);
+          player?.isSeeking(false);
+          _send({"eventType": eventType});
         }
         break;
       default:
         break;
     }
     return new Future(()=>true);
+  }
+
+  void onListen(){
+
+  }
+
+  void onCancel(){
+
+  }
+
+  void onPause(){
+
+  }
+
+  void onResume(){
+
+  }
+
+  void onSubscriptionListen(StreamSubscription<dynamic> s){
+
+  }
+
+  void onSubscriptionCancel(StreamSubscription<dynamic> s){
+
+  }
+
+  void _send(dynamic event){
+    if (_sc.hasListener) {
+      _sc.add(event);
+    }
   }
 }
 

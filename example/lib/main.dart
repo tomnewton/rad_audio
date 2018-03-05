@@ -24,7 +24,7 @@ class _MyAppState extends State<MyApp> implements IAudioPlayer{
   @override
   initState() {
     super.initState();
-    audio = new RadAudio(this);
+    audio = new RadAudio(player: this);
   }
 
   Future<File> _getFile(String name) async {
@@ -38,14 +38,19 @@ class _MyAppState extends State<MyApp> implements IAudioPlayer{
       RadAudio.play();
       return;
     }
-    Map<String, String> args = new Map<String, String>.from(
+    /*Map<String, String> args = new Map<String, String>.from(
         {
           "imageUri": pathToArtwork,
           "audioUri": "https://traffic.megaphone.fm/GLT7778633911.mp3", //"https://traffic.megaphone.fm/GLT3809370877.mp3"
           "titleText": "Crimetown",
           "subtitleText": "Courtney"
-        });
-    RadAudio.prepareToPlay(args);
+        });*/
+
+    RadAudioPrepareToPlayMsg msg = new RadAudioPrepareToPlayMsg(
+        "https://traffic.megaphone.fm/GLT7778633911.mp3",
+        pathToArtwork, "Crimetown", "Courtney");
+    audio.prepareToPlay(msg);
+    //RadAudio.prepareToPlay(msg);
   }
 
   void fetchDebugAlbumArt(){
