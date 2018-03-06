@@ -102,7 +102,7 @@ class RadAudio {
           player?.readyToPlay(duration);
           _send({"eventType": eventType, "duration": duration});
         } else if ( eventType == RadAudioEventTypes.PROGRESS_EVENT ){
-          int pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+          double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
           _send({"eventType": eventType, "position": pos.toDouble()});
           player?.playbackProgress(pos.toDouble());
         } else if ( eventType == RadAudioEventTypes.PLAYBACK_STARTED ){
@@ -120,6 +120,9 @@ class RadAudio {
           _send({"eventType": eventType});
         } else if ( eventType == RadAudioEventTypes.SEEK_COMPLETE){
           player?.isSeeking(false);
+          _send({"eventType": eventType});
+        } else if ( eventType == RadAudioEventTypes.PAUSED ){
+          player?.playbackPaused();
           _send({"eventType": eventType});
         }
         break;
@@ -167,4 +170,5 @@ abstract class IAudioPlayer {
   void isSeeking(bool seeking);
   void playbackStarted();
   void playbackStopped();
+  void playbackPaused();
 }

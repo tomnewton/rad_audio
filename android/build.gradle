@@ -10,7 +10,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.1'
 
     }
 }
@@ -27,14 +27,10 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion '26.0.2'
+    compileSdkVersion 27
 
     defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        minSdkVersion 16
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     lintOptions {
@@ -43,6 +39,6 @@ android {
 }
 
 dependencies{
-    compile 'com.android.support:support-media-compat:26.1.0' //'com.android.support:support-media-compat:25.4.0'
+    implementation 'com.android.support:support-media-compat:27.1.0' //'com.android.support:support-media-compat:26.1.0'
 }
 

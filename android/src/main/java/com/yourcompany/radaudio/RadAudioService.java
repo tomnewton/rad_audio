@@ -10,7 +10,6 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -65,8 +64,6 @@ public class RadAudioService extends Service implements
     private RadAudioServiceCallbacks callbacks;
     NotificationChannel mNotificationChannel;
 
-    Bitmap mAlbumArt;
-
     @Override
     public void onCreate(){
         super.onCreate();
@@ -79,11 +76,12 @@ public class RadAudioService extends Service implements
     private void initPlayer(){
         mPlayer = new MediaPlayer();
         mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        mPlayer.setAudioAttributes(new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
-                .build());
-
+        if (Build.VERSION.SDK_INT >= 21) {
+            mPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                    .build());
+        }
         mPlayer.setOnPreparedListener(this);
         mPlayer.setOnCompletionListener(this);
         mPlayer.setOnErrorListener(this);
@@ -274,7 +272,8 @@ public class RadAudioService extends Service implements
         callbacks.playbackReady(mp.getDuration());
     }
 
-    protected class RadAudioServiceBinder extends Binder {
+
+    class RadAudioServiceBinder extends Binder {
         RadAudioService getService(){
             return RadAudioService.this;
         }

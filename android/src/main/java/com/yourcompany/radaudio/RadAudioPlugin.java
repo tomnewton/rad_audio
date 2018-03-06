@@ -9,8 +9,7 @@ import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
-import android.os.IBinder;;
+import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
@@ -19,7 +18,6 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import io.flutter.app.FlutterActivity;
 import io.flutter.app.FlutterApplication;
@@ -33,7 +31,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
  * RadAudioPlugin
  */
 public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAudioServiceCallbacks {
-  public static final String TAG = "RadAudioPlugin";
+  private static final String TAG = "RadAudioPlugin";
 
   /**
    * Plugin registration.
@@ -44,15 +42,13 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
     chan.setMethodCallHandler(instance);
   }
 
-  MethodChannel mChannel;
-  RadAudioService mService;
-  Intent playIntent;
-  boolean isServiceBound;
-  Registrar mRegistrar;
+  private MethodChannel mChannel;
+  private RadAudioService mService;
+  private Registrar mRegistrar;
 
-  MediaControllerCompat mController;
+  private MediaControllerCompat mController;
 
-  public RadAudioPlugin( Registrar registrar, MethodChannel chan){
+  private RadAudioPlugin( Registrar registrar, MethodChannel chan){
     this.mRegistrar = registrar;
     this.mChannel = chan;
     startAudioService(Uri.EMPTY);
@@ -65,9 +61,6 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
       RadAudioService.RadAudioServiceBinder binder = (RadAudioService.RadAudioServiceBinder)service;
       //get service
       mService = binder.getService();
-      //pass list
-      //mService.setList(songList);
-      isServiceBound = true;
       mService.setCallbacks(RadAudioPlugin.this);
       mService.registerControllerCallback(RadAudioPlugin.this.mControllerCallback);
 
@@ -80,7 +73,6 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-      isServiceBound = false;
       mController.unregisterCallback(mControllerCallback);
       mController = null;
     }
@@ -96,6 +88,7 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
     if (call.method.equalsIgnoreCase("prepareToPlay")) {
       Log.d("plugin", "prepareToPlay");
 
+      @SuppressWarnings("unchecked")
       HashMap<String, String> msg = ((ArrayList<HashMap<String, String>>)call.arguments).get(0);
 
       Uri uri = Uri.parse(msg.get("audioUri"));
@@ -152,7 +145,7 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
   }
 
   public void playbackReady(int duration){
-    HashMap<String, Object> args = new HashMap<String, Object>();
+    HashMap<String, Object> args = new HashMap<>();
     args.put("EVENT_TYPE", "READY_TO_PLAY");
     args.put("DURATION", (double)duration );
 
@@ -160,7 +153,7 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
   }
 
   public void progress(int position){
-    HashMap<String, Object> args = new HashMap<String, Object>();
+    HashMap<String, Object> args = new HashMap<>();
     args.put("EVENT_TYPE", "PROGRESS");
     args.put("CURRENT_PLAYBACK_POSITION", (double)position);
 
@@ -168,7 +161,7 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
   }
 
   public void stop(){
-    HashMap<String, Object> args = new HashMap<String, Object>();
+    HashMap<String, Object> args = new HashMap<>();
     args.put("EVENT_TYPE", "PLAYBACK_STOPPED");
 
     mChannel.invokeMethod("event", args);
@@ -180,7 +173,7 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
 
   private FlutterActivity getFlutterActivity(){
     Application app = (Application) mRegistrar.activeContext().getApplicationContext();
-    if((app instanceof FlutterApplication) == false){
+    if(!(app instanceof FlutterApplication)){
       Log.i(TAG, "app was not FlutterApplication.");
       return null;
     }
@@ -190,13 +183,11 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
       Log.i(TAG, "viewFromAppContext is null?");
       return null;
     }
-    if((activity instanceof FlutterActivity) == false){
+    if(!(activity instanceof FlutterActivity)){
       Log.i(TAG, "activity is not Flutter Activity...");
       return null;
     }
-    FlutterActivity flutterActivity = (FlutterActivity)activity;
-    return flutterActivity;
-
+    return (FlutterActivity)activity;
   }
 
   private MediaControllerCompat.Callback mControllerCallback = new MediaControllerCompat.Callback() {

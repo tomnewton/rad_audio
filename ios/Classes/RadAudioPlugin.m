@@ -227,7 +227,7 @@ typedef enum {
 
 -(void)seekToTime:(NSNumber*)timeInSeconds {
     __weak RadAudioPlugin *weakSelf = self;
-    CMTime t = CMTimeMakeWithSeconds([timeInSeconds floatValue], [player currentTime].timescale); //CMTimeMake([timeInSeconds intValue], 1);     //1 means each unit of value is 1 second.
+    CMTime t = CMTimeMakeWithSeconds([timeInSeconds floatValue], [player currentTime].timescale); 
     [player seekToTime:t completionHandler:^(BOOL finished){
         if (finished) {
             //[weakSelf updateControllerElapsedTime:YES];
@@ -356,7 +356,14 @@ typedef enum {
 -(void)handlePrepareToPlayWithFlutterCall:(FlutterMethodCall*)call {
     NSDictionary* args = call.arguments[0];
     
-    AVAsset* asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:[args objectForKey:@"audioUri"]]];
+    AVAsset* asset;
+    
+    NSString* audioUri = [args objectForKey:@"audioUri"];
+    if ( [audioUri hasPrefix:@"http"] ){
+        asset = [AVAsset assetWithURL:[NSURL URLWithString:audioUri]];
+    } else {
+        asset = [AVAsset assetWithURL:[NSURL fileURLWithPath:audioUri]];
+    }
     
     NSArray<NSString*>* assetKeys =
         [NSArray arrayWithObjects:@"duration", @"playable", @"providesPreciseDurationAndTiming", nil];
@@ -370,10 +377,10 @@ typedef enum {
     
     MPMediaItemArtwork *artwork;
     
-    /*if ( [args objectForKey:@"imageUri"] != nil && [@"" isEqualToString:[args objectForKey:@"imageUri"]]){
+    if ( [args objectForKey:@"imageUri"] != nil && ![@"" isEqualToString:[args objectForKey:@"imageUri"]]){
         UIImage* img = [UIImage imageWithContentsOfFile:[args objectForKey:@"imageUri"]];
         artwork = [[MPMediaItemArtwork alloc] initWithImage:img];
-    }*/
+    }
     __weak RadAudioPlugin *weakSelf = self;
     
     [asset loadValuesAsynchronouslyForKeys:assetKeys completionHandler:^(void){
@@ -488,8 +495,8 @@ typedef enum {
 }
 
 -(void)updatePlaybackPosition:(CMTime)time{
-    long seconds = time.value/time.timescale;  //=seconds.
-    [self sendEventToFlutter:kProgressEvent withArguments:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithLong:seconds], [self FormatRadAudioArgKeyToString:kCurrentPlaybackPosition], nil]];
+    Float64 seconds = CMTimeGetSeconds(time);  //=seconds.
+    [self sendEventToFlutter:kProgressEvent withArguments:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:seconds], [self FormatRadAudioArgKeyToString:kCurrentPlaybackPosition], nil]];
 }
 
 @end
