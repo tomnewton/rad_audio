@@ -128,7 +128,9 @@ public class RadAudioPlugin
       Bitmap bmp = BitmapFactory.decodeFile(imageUri.toString());
 
       if (mService.mSession.isActive() ){
-        if ( mService.mPlayer.isPlaying() ) {
+        if ( mController.getPlaybackState().getState() == PlaybackStateCompat.STATE_PLAYING ||
+                mController.getPlaybackState().getState() == PlaybackStateCompat.STATE_PAUSED ) {
+
           mController.getTransportControls().stop();
         }
       }
