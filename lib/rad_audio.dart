@@ -10,6 +10,7 @@ class RadAudioArgKeys {
 }
 
 class RadAudioEventTypes {
+  static const String PREPARING_TO_PLAY = "PREPARING_TO_PLAY";
   static const String PLAYBACK_STOPPED = "PLAYBACK_STOPPED";
   static const String READY_TO_PLAY = "READY_TO_PLAY";
   static const String PLAYBACK_STARTED = "PLAYBACK_STARTED";
@@ -45,7 +46,7 @@ class RadAudioPrepareToPlayMsg{
 }
 
 class RadAudio {
-  final IAudioPlayer player;
+  IAudioPlayer player;
   StreamController _sc;
 
   static const MethodChannel _channel =
@@ -74,17 +75,32 @@ class RadAudio {
   static void seekToTime(int seconds) =>
       _channel.invokeMethod("seekToTime", [seconds]);
 
+  static RadAudio _singleton;
+
+  //Private constructor.
+  RadAudio._internal({this.player});
 
 
-  RadAudio({this.player}){
-    _channel.setMethodCallHandler(this.handler);
-    _sc = new StreamController(onListen: onListen, onPause: onPause, onCancel: onCancel, onResume: onResume);
+  factory RadAudio({IAudioPlayer player}){
+    if (RadAudio._singleton != null){
+      return _singleton;
+    }
+    _singleton = new RadAudio._internal(player: player);
+    _channel.setMethodCallHandler(_singleton.handler);
+    return _singleton;
   }
-
-  Stream get stream => _sc.stream;//.asBroadcastStream(onListen: onSubscriptionListen, onCancel: onSubscriptionCancel);
 
   Stream<dynamic> prepareToPlay(RadAudioPrepareToPlayMsg msg){
     _channel.invokeMethod("prepareToPlay", [msg.toMap()]);
+    if ( _sc != null ){
+      //_sc.add({"eventType": RadAudioEventTypes.PLAYBACK_STOPPED});
+      _sc.close(); // we were playing something before... close the stream.
+    }
+    _sc = new StreamController(onListen: onListen, onPause: onPause, onCancel: onCancel, onResume: onResume);
+    _sc.add({
+      "eventType": RadAudioEventTypes.PREPARING_TO_PLAY,
+      "message" : msg
+    });
     return _sc.stream;
   }
 
