@@ -93,8 +93,17 @@ typedef enum {
                                      binaryMessenger:[registrar messenger]];
     RadAudioPlugin* instance = [[RadAudioPlugin alloc] initWithChannel:channel];
     [registrar addMethodCallDelegate:instance channel:channel];
+    
+    [registrar addApplicationDelegate:instance];
 }
 
+-(void)applicationWillResignActive:(UIApplication *)application{
+    if (player == nil){
+        NSLog(@"iOS [session setActive:false]");
+        NSError* error;
+        [session setActive:false error:&error];
+    }
+}
 
 -(id)initWithChannel:(FlutterMethodChannel*)chan{
     if ( self = [super init] )
@@ -108,9 +117,6 @@ typedef enum {
         };
         
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(handleInterruption:) name:AVAudioSessionInterruptionNotification object:session];
-        
-        
-        //TODO: Subscribe to If the interruption type is AVAudioSessionInterruptionTypeEnded, check for this value in the AVAudioSessionInterruptionOptionKey key in the userInfo dictionary of the AVAudioSessionInterruptionNotification notification. It serves as a hint that it is appropriate for your app to resume audio playback without waiting for user input.
     }
     return self;
 }
