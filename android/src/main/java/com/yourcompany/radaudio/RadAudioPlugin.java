@@ -160,12 +160,7 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
     mChannel.invokeMethod("event", args);
   }
 
-  public void stop(){
-    HashMap<String, Object> args = new HashMap<>();
-    args.put("EVENT_TYPE", "PLAYBACK_STOPPED");
 
-    mChannel.invokeMethod("event", args);
-  }
 
   private Context getActiveContext(){
     return (mRegistrar.activity() != null) ? mRegistrar.activity() : mRegistrar.context();
@@ -199,12 +194,25 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
       }
       else if (state.getState() == PlaybackStateCompat.STATE_PLAYING){
         Log.d(TAG, "Media is playing.");
+        HashMap<String, Object> args = new HashMap<>();
+        args.put("EVENT_TYPE", "PLAYBACK_STARTED");
+
+        mChannel.invokeMethod("event", args);
+
       }
       else if ( state.getState() == PlaybackStateCompat.STATE_STOPPED){
         Log.d(TAG, "Media is stopped");
+        HashMap<String, Object> args = new HashMap<>();
+        args.put("EVENT_TYPE", "PLAYBACK_STOPPED");
+
+        mChannel.invokeMethod("event", args);
       }
       else if ( state.getState() == PlaybackStateCompat.STATE_PAUSED){
         Log.d(TAG, "Media paused.");
+        HashMap<String, Object> args = new HashMap<>();
+        args.put("EVENT_TYPE", "PLAYBACK_PAUSED");
+
+        mChannel.invokeMethod("event", args);
       }
     }
   };

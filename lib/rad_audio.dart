@@ -14,7 +14,7 @@ class RadAudioEventTypes {
   static const String READY_TO_PLAY = "READY_TO_PLAY";
   static const String PLAYBACK_STARTED = "PLAYBACK_STARTED";
   static const String PROGRESS_EVENT = "PROGRESS";
-  static const String PAUSED = "PAUSED";
+  static const String PAUSED = "PLAYBACK_PAUSED";
   static const String SEEKING = "SEEKING";
   static const String SEEK_COMPLETE = "SEEK_COMPLETE";
 }

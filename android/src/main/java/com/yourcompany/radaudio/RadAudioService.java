@@ -137,8 +137,8 @@ public class RadAudioService extends Service implements
                 .setShowWhen(false)
                 .setDeleteIntent(pendingIntent)
                 .setContentIntent(contentPendingIntent)
+                .setDefaults(0)
                 .setStyle(style);
-
 
 
         builder.addAction( generateAction( R.drawable.ic_replay_10_black_32dp, "Rewind", ACTION_REWIND ) );
@@ -242,8 +242,6 @@ public class RadAudioService extends Service implements
         mPlayer.stop();
 
         stopForeground(true);
-
-        callbacks.stop();
     }
 
     public void pause(){
@@ -294,7 +292,6 @@ public class RadAudioService extends Service implements
     public interface RadAudioServiceCallbacks {
         void playbackReady(int duration);
         void progress(int currentPosition);
-        void stop();
     }
 
 
