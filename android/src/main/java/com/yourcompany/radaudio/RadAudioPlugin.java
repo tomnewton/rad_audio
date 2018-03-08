@@ -21,16 +21,24 @@ import java.util.HashMap;
 
 import io.flutter.app.FlutterActivity;
 import io.flutter.app.FlutterApplication;
+import io.flutter.plugin.common.ActivityLifecycleListener;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.MethodCall;
+import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
-
+import io.flutter.view.FlutterNativeView;
 /**
  * RadAudioPlugin
  */
-public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAudioServiceCallbacks {
+public class RadAudioPlugin
+        implements MethodCallHandler,
+        RadAudioService.RadAudioServiceCallbacks,
+        PluginRegistry.ViewDestroyListener,
+        ActivityLifecycleListener,
+        PluginRegistry.UserLeaveHintListener{
+
   private static final String TAG = "RadAudioPlugin";
 
   /**
@@ -40,6 +48,9 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
     MethodChannel chan = new MethodChannel(registrar.messenger(), "rad_audio");
     RadAudioPlugin instance = new RadAudioPlugin(registrar, chan);
     chan.setMethodCallHandler(instance);
+    registrar.addUserLeaveHintListener(instance);
+    registrar.addViewDestroyListener(instance);
+    registrar.view().addActivityLifecycleListener(instance);
   }
 
   private MethodChannel mChannel;
@@ -53,6 +64,26 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
     this.mChannel = chan;
     startAudioService(Uri.EMPTY);
   }
+
+  @Override
+  public void onPostResume() {
+    Log.d(TAG, "onPostResume()");
+  }
+
+  @Override
+  public boolean onViewDestroy(FlutterNativeView flutterNativeView) {
+    Log.d(TAG, "onViewDestroy");
+    //without this we'll leak the connection when the app exits.
+    getFlutterActivity().unbindService(audioServiceConnection);
+    return false;
+  }
+
+
+  @Override
+  public void onUserLeaveHint() {
+    Log.d(TAG, "UserLeaveHint fired: the app is probably moving to the background.");
+  }
+
 
   private ServiceConnection audioServiceConnection = new ServiceConnection(){
 
@@ -222,4 +253,6 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
       }
     }
   };
+
+
 }

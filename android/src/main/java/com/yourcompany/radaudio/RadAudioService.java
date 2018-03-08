@@ -109,6 +109,17 @@ public class RadAudioService extends Service implements
         return START_STICKY;
     }
 
+    public void clearNotifications(){
+
+        if (mSession != null && mSession.isActive()){
+            return;
+        }
+        NotificationManager nm = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        if ( nm != null ) {
+            nm.cancelAll();
+        }
+    }
+
     private NotificationCompat.Action generateAction(int icon, String title, String intentAction){
         Intent intent = new Intent( getApplicationContext(), RadAudioService.class );
         intent.setAction( intentAction );
@@ -134,6 +145,7 @@ public class RadAudioService extends Service implements
                 .setContentTitle(meta.getString(MediaMetadataCompat.METADATA_KEY_TITLE))
                 .setContentText(meta.getString(MediaMetadataCompat.METADATA_KEY_AUTHOR))
                 .setLargeIcon(meta.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART))
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setColorized(true)
                 .setShowWhen(false)
                 .setDeleteIntent(pendingIntent)
@@ -180,6 +192,9 @@ public class RadAudioService extends Service implements
     public boolean onUnbind(Intent intent){
         if ( mPlayer.isPlaying() ) {
             mPlayer.stop();
+            mPlayer.reset();
+            mSession.setActive(false);
+            mSession.release();
         }
         return false;
     }
@@ -412,9 +427,15 @@ public class RadAudioService extends Service implements
 
     @Override
     public void onDestroy(){
-        this.mPlayer.stop();
+        mProgressHandler.removeCallbacks(sendProgress);
+        if ( mPlayer.isPlaying() ) {
+            this.mPlayer.stop();
+        }
         this.mPlayer = null;
-        this.mSession.setActive(false);
+
+        if ( mSession.isActive() ) {
+            this.mSession.setActive(false);
+        }
         this.mSession.release();
         this.mSession = null;
 
@@ -427,7 +448,7 @@ public class RadAudioService extends Service implements
                 notificationManager.deleteNotificationChannel(NOTIFICATION_CHANNEL_ID);
             }
         }
-
+        clearNotifications();
         this.stopForeground(true);
     }
 }
