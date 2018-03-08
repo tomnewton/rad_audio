@@ -100,7 +100,6 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
         if ( mService.mPlayer.isPlaying() ) {
           mController.getTransportControls().stop();
         }
-        mService.mSession.setActive(false);
       }
 
       mService.mSession.setMetadata(new MediaMetadataCompat.Builder()

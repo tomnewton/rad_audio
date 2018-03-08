@@ -75,12 +75,14 @@ public class RadAudioService extends Service implements
 
     private void initPlayer(){
         mPlayer = new MediaPlayer();
-        mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
         if (Build.VERSION.SDK_INT >= 21) {
             mPlayer.setAudioAttributes(new AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED)
+                    .setLegacyStreamType(AudioManager.STREAM_MUSIC)
                     .build());
+        } else {
+            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         }
         mPlayer.setOnPreparedListener(this);
         mPlayer.setOnCompletionListener(this);
@@ -176,31 +178,32 @@ public class RadAudioService extends Service implements
 
     @Override
     public boolean onUnbind(Intent intent){
-        mPlayer.stop();
-        mPlayer.release();
+        if ( mPlayer.isPlaying() ) {
+            mPlayer.stop();
+        }
         return false;
     }
 
 
     public void play(){
+        if (mSession.isActive() == false ) {
+            mSession.setActive(true);
+        }
         NotificationCompat.Action pause = generateAction(R.drawable.ic_pause_black_32dp, "Pause", ACTION_PAUSE);
         buildNotification(pause);
 
+        mPlayer.setOnSeekCompleteListener( new MediaPlayer.OnSeekCompleteListener(){
+            public void onSeekComplete(MediaPlayer mp){
+                mp.start();
+                mProgressHandler.post(sendProgress);
+            }
+        });
 
         if ( isPaused ){
             mPlayer.seekTo(lastPlayerPosition);
-            mPlayer.setOnSeekCompleteListener( new MediaPlayer.OnSeekCompleteListener(){
-                public void onSeekComplete(MediaPlayer mp){
-                    mp.start();
-                }
-            });
-            return;
+        } else {
+            mPlayer.seekTo(0);
         }
-
-        mPlayer.start();
-        mProgressHandler.post(sendProgress);
-
-
     }
 
     private final Runnable sendProgress = new Runnable(){
@@ -215,14 +218,12 @@ public class RadAudioService extends Service implements
 
 
     public void prepareToPlay(Uri uri){
-        if ( !mSession.isActive() ) {
-            mSession.setActive(true);
+        if (mSession == null){
+            initSession();
         }
-        if (mPlayer.isPlaying()){
-            mSession.getController().getTransportControls().stop();
+        if (mPlayer == null){
+            initPlayer();
         }
-
-        mPlayer.reset();
 
         try {
 
@@ -247,7 +248,12 @@ public class RadAudioService extends Service implements
 
     public void stop(){
         mPlayer.stop();
-
+        isPaused = false;
+        lastPlayerPosition = 0;
+        mPlayer.reset();
+        mPlayer = null;
+        mSession.setActive(false);
+        mSession.release();
         stopForeground(true);
     }
 
@@ -347,12 +353,12 @@ public class RadAudioService extends Service implements
 
         @Override
         public void onStop() {
-            RadAudioService.this.stop();
             mSession.setPlaybackState(
                     _builder
                             .setState(PlaybackStateCompat.STATE_STOPPED, mPlayer.getCurrentPosition(), 0.0f)
                             .build()
             );
+            RadAudioService.this.stop();
         }
 
         @Override
