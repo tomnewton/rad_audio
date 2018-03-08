@@ -96,6 +96,13 @@ public class RadAudioPlugin implements MethodCallHandler, RadAudioService.RadAud
 
       Bitmap bmp = BitmapFactory.decodeFile(imageUri.toString());
 
+      if (mService.mSession.isActive() ){
+        if ( mService.mPlayer.isPlaying() ) {
+          mController.getTransportControls().stop();
+        }
+        mService.mSession.setActive(false);
+      }
+
       mService.mSession.setMetadata(new MediaMetadataCompat.Builder()
               .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ART_URI, imageUri.toString())
               .putString(MediaMetadataCompat.METADATA_KEY_TITLE, msg.get("titleText"))

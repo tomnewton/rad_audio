@@ -91,7 +91,6 @@ public class RadAudioService extends Service implements
         mSession = new MediaSessionCompat(this.getApplicationContext(), "RadAudioMediaSession");
         mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS| MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mSession.setCallback(mSessionCallback);
-        mSession.setActive(true);
     }
 
     @Override
@@ -216,7 +215,15 @@ public class RadAudioService extends Service implements
 
 
     public void prepareToPlay(Uri uri){
+        if ( !mSession.isActive() ) {
+            mSession.setActive(true);
+        }
+        if (mPlayer.isPlaying()){
+            mSession.getController().getTransportControls().stop();
+        }
+
         mPlayer.reset();
+
         try {
 
             mPlayer.setOnPreparedListener(this);

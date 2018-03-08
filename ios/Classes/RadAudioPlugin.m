@@ -50,7 +50,7 @@ typedef enum {
         case kProgressEvent:
             return @"PROGRESS";
         case kPaused:
-            return @"PAUSED";
+            return @"PLAYBACK_PAUSED";
         case kSeeking:
             return @"SEEKING";
         case kSeekComplete:
@@ -205,9 +205,7 @@ typedef enum {
 
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-    if ([@"getPlatformVersion" isEqualToString:call.method]) {
-        [self handleGetPlatformVersionWithResult:result];
-    } else if ( [@"prepareToPlay" isEqualToString:call.method]){
+    if ( [@"prepareToPlay" isEqualToString:call.method]){
         [self handlePrepareToPlayWithFlutterCall:call];
     } else if ([@"play" isEqualToString:call.method]){
         [self play];
@@ -227,7 +225,7 @@ typedef enum {
 
 -(void)seekToTime:(NSNumber*)timeInSeconds {
     __weak RadAudioPlugin *weakSelf = self;
-    CMTime t = CMTimeMakeWithSeconds([timeInSeconds floatValue], [player currentTime].timescale); 
+    CMTime t = CMTimeMakeWithSeconds([timeInSeconds floatValue], [player currentTime].timescale);
     [player seekToTime:t completionHandler:^(BOOL finished){
         if (finished) {
             //[weakSelf updateControllerElapsedTime:YES];
@@ -288,14 +286,15 @@ typedef enum {
     
     [self updateControllerElapsedTime:YES];
     
+    if(@available(iOS 11, *)){
+        [infoCenter setPlaybackState:MPNowPlayingPlaybackStatePlaying];
+    }
+    
     if ( isPaused ){
         [player setRate:1.0f];
         isPaused = false;
+        [self sendEventToFlutter:kPlaybackStarted];
         return;
-    }
-    
-    if(@available(iOS 11, *)){
-        [infoCenter setPlaybackState:MPNowPlayingPlaybackStatePlaying];
     }
     
     [player play];
@@ -347,13 +346,19 @@ typedef enum {
         if(@available(iOS 11, *)){
             [infoCenter setPlaybackState:MPNowPlayingPlaybackStatePaused];
         }
+        
         [self sendEventToFlutter:kPaused withArguments:nil];
+        
     } else {
         [self sendErrorMessageToFlutter:@"Pause when nothing is playing" andCode:kPlayerBadState];
     }
 }
 
 -(void)handlePrepareToPlayWithFlutterCall:(FlutterMethodCall*)call {
+    if (player.rate > 0){
+        [self stop];
+    }
+    
     NSDictionary* args = call.arguments[0];
     
     AVAsset* asset;
