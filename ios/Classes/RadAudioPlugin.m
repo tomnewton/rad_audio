@@ -184,7 +184,7 @@ typedef enum {
     
     if ( type == AVAudioSessionInterruptionTypeBegan ){
         //assuming audio will stop playing automagically... soo....
-        [self sendEventToFlutter:kPlaybackStopped];
+        [self sendEventToFlutter:kPaused];
     } else {
         // handle AVAudioSessionInterruptionTypeEnded
         [self sendEventToFlutter:kPlaybackStarted];
