@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/material.dart';
 import 'package:rad_audio/rad_audio.dart';
-import 'package:rad_audio_example/RadSlider.dart';
+import 'package:rad_audio/RadSlider.dart';
 
 void main() => runApp(new MyApp());
 

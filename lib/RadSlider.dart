@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-typedef void RadSliderCallback(double position);
+typedef void RadSliderDragCompleteCallback(double position);
+typedef void RadSliderDragStartedCallback();
 
 class RadSlider extends StatefulWidget {
   final double width;
@@ -8,11 +9,13 @@ class RadSlider extends StatefulWidget {
   final Color backgroundColor;
   final Color primaryLineColor;
   final Color secondaryLineColor;
-  final RadSliderCallback callback;
+  final RadSliderDragCompleteCallback onDragComplete;
+  final RadSliderDragStartedCallback onDragStart;
   final double currentPosition;
 
   RadSlider(this.width, this.ballRadius, {
-    this.callback,
+    this.onDragComplete,
+    this.onDragStart,
     this.currentPosition = 0.0,
     this.backgroundColor = Colors.white,
     this.primaryLineColor = Colors.blue,
@@ -81,6 +84,10 @@ class _RadSliderState extends State<RadSlider> {
               height: 2*widget.ballRadius,
             ),
             onHorizontalDragStart: (DragStartDetails d){
+              if ( widget.onDragStart != null ) {
+                widget.onDragStart();
+              }
+
               this.isDragging = true;
               RenderBox box = context.findRenderObject();
               var local = box.globalToLocal(d.globalPosition);
@@ -93,12 +100,13 @@ class _RadSliderState extends State<RadSlider> {
                 double newPos = local.dx-(2*widget.ballRadius);
                 this.currentPosition =  newPos < 0.0 ? 0.0 : newPos;
               });
+
             },
             onHorizontalDragUpdate: (DragUpdateDetails d){
               RenderBox box = context.findRenderObject();
               var local = box.globalToLocal(d.globalPosition);
-              print(d.globalPosition.dx.toString() + "|global|" + d.globalPosition.dx.toString());
-              print(local.dx.toString() + "|" + local.dy.toString());
+              //print(d.globalPosition.dx.toString() + "|global|" + d.globalPosition.dx.toString());
+              //print(local.dx.toString() + "|" + local.dy.toString());
 
               setState((){
                 if ( local.dx > widget.width ){
@@ -114,8 +122,8 @@ class _RadSliderState extends State<RadSlider> {
               });
             },
             onHorizontalDragEnd: (DragEndDetails d){
-              if ( widget.callback != null ) {
-                widget.callback(this.currentPosition);
+              if ( widget.onDragComplete != null ) {
+                widget.onDragComplete(this.currentPosition);
               }
               this.isDragging = false;
             },

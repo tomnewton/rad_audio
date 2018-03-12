@@ -116,10 +116,10 @@ class RadAudio {
         if ( eventType == RadAudioEventTypes.READY_TO_PLAY ){
           double duration = args[RadAudioArgKeys.DURATION];
           player?.readyToPlay(duration);
-          _send({"eventType": eventType, "duration": duration});
+          _send({"eventType": eventType, RadAudioArgKeys.DURATION: duration});
         } else if ( eventType == RadAudioEventTypes.PROGRESS_EVENT ){
           double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
-          _send({"eventType": eventType, "position": pos.toDouble()});
+          _send({"eventType": eventType, RadAudioArgKeys.CURRENT_PLAYBACK_POSITION: pos.toDouble()});
           player?.playbackProgress(pos.toDouble());
         } else if ( eventType == RadAudioEventTypes.PLAYBACK_STARTED ){
           player?.playbackStarted();
