@@ -50,13 +50,16 @@ class _RadSliderState extends State<RadSlider> {
 
   @override
   Widget build(BuildContext context) {
+    var CONTAINER_HEIGHT = 5*widget.ballRadius;
+
     return new Stack(
       overflow: Overflow.visible,
+      fit: StackFit.loose,
       children: <Widget>[
         new Container(
           color: widget.backgroundColor,
-          width: widget.width+(2*widget.ballRadius),
-          height: (2*widget.ballRadius),
+          width: widget.width+(5*widget.ballRadius),
+          height: CONTAINER_HEIGHT,
         ),
         new Positioned(
           child: new Container(
@@ -64,8 +67,8 @@ class _RadSliderState extends State<RadSlider> {
             width: widget.width,
             height: 2.0,
           ),
-          top: widget.ballRadius-1,
-          left: widget.ballRadius,
+          top: CONTAINER_HEIGHT/2 -1, //widget.ballRadius-1,
+          left: CONTAINER_HEIGHT/2,//widget.ballRadius,
         ),
         new Positioned(
           child: new Container(
@@ -73,15 +76,25 @@ class _RadSliderState extends State<RadSlider> {
             width: this.currentPosition,
             height: 2.0,
           ),
-          top: widget.ballRadius-1,
-          left: widget.ballRadius,
+          top: CONTAINER_HEIGHT/2 -1,
+          left:  CONTAINER_HEIGHT/2, //widget.ballRadius,
         ),
         new Positioned(
           child: new GestureDetector(
-            child: new Container(
-              decoration: new BoxDecoration(color: widget.primaryLineColor, shape: BoxShape.circle),
-              width: 2*widget.ballRadius,
-              height: 2*widget.ballRadius,
+            child: new Stack(
+              alignment: AlignmentDirectional.center,
+              children: <Widget>[
+                new Container(
+                  width: CONTAINER_HEIGHT,
+                  height: CONTAINER_HEIGHT,
+                  color: Colors.grey.withAlpha(0),
+                ),
+                new Container(
+                  decoration: new BoxDecoration(color: widget.primaryLineColor, shape: BoxShape.circle),
+                  width: 2*widget.ballRadius,
+                  height: 2*widget.ballRadius,
+                ),
+              ],
             ),
             onHorizontalDragStart: (DragStartDetails d){
               if ( widget.onDragStart != null ) {

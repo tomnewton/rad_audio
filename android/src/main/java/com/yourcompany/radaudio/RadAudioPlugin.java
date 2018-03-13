@@ -166,7 +166,7 @@ public class RadAudioPlugin
       return;
     }
     if (call.method.equalsIgnoreCase("seekToTime")){
-      long t = ((Integer)((ArrayList)call.arguments).get(0)).longValue();
+      long t = ((Integer)((ArrayList)call.arguments).get(0)).longValue() * 1000L;
 
       mController.getTransportControls().seekTo(t);
       result.success(true);
@@ -186,7 +186,7 @@ public class RadAudioPlugin
   public void playbackReady(int duration){
     HashMap<String, Object> args = new HashMap<>();
     args.put("EVENT_TYPE", "READY_TO_PLAY");
-    args.put("DURATION", (double)duration );
+    args.put("DURATION", (double)duration/1000 );
 
     mChannel.invokeMethod("event", args);
   }
@@ -194,7 +194,7 @@ public class RadAudioPlugin
   public void progress(int position){
     HashMap<String, Object> args = new HashMap<>();
     args.put("EVENT_TYPE", "PROGRESS");
-    args.put("CURRENT_PLAYBACK_POSITION", (double)position);
+    args.put("CURRENT_PLAYBACK_POSITION", (double)position/1000);
 
     mChannel.invokeMethod("event", args);
   }
