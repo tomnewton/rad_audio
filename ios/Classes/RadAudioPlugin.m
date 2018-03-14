@@ -197,6 +197,10 @@ typedef enum {
     }
 }
 
+-(void)handleDidPlayToEnd:(NSNotification*)note{
+    [self stop];
+}
+
 -(void)handleTimeJumped:(NSNotification* )note{
     NSLog(@"TimeDidJump");
 }
@@ -385,6 +389,9 @@ typedef enum {
     if(@available(iOS 10.0, *)){
         [player setAutomaticallyWaitsToMinimizeStalling:false];
     }
+    
+    //listen for when the playback has ended for the current item.
+     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(handleDidPlayToEnd:) name:AVPlayerItemDidPlayToEndTimeNotification object:player.currentItem];
     
     MPMediaItemArtwork *artwork;
     
