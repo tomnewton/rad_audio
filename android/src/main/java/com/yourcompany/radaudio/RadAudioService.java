@@ -223,9 +223,8 @@ public class RadAudioService extends Service implements
 
     private final Runnable sendProgress = new Runnable(){
       public void run(){
-          if ( mPlayer.isPlaying() ){
+          if ( mPlayer != null && mPlayer.isPlaying() ){
               callbacks.progress(mPlayer.getCurrentPosition());
-
               mProgressHandler.postDelayed(this, 500);
           }
       }
@@ -262,6 +261,7 @@ public class RadAudioService extends Service implements
     }
 
     public void stop(){
+        mProgressHandler.removeCallbacks(sendProgress);
         mPlayer.stop();
         isPaused = false;
         lastPlayerPosition = 0;
@@ -284,6 +284,8 @@ public class RadAudioService extends Service implements
     @Override
     public void onCompletion(MediaPlayer mp) {
 
+        //TODO: when we allow playlists... we'll need to move to the next item in the queue.
+        mSession.getController().getTransportControls().stop();
     }
 
     @Override

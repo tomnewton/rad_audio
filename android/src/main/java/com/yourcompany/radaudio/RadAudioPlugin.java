@@ -227,7 +227,8 @@ public class RadAudioPlugin
   private MediaControllerCompat.Callback mControllerCallback = new MediaControllerCompat.Callback() {
     @Override
     public void onPlaybackStateChanged(PlaybackStateCompat state) {
-      Log.d(TAG, "playbackStateChanged");
+      Log.d(TAG, "Playback State Changed: " + state.getState());
+
       if ( state.getState() == PlaybackStateCompat.STATE_CONNECTING){
         Log.d(TAG, "Media loading...");
       }
@@ -250,6 +251,12 @@ public class RadAudioPlugin
         Log.d(TAG, "Media paused.");
         HashMap<String, Object> args = new HashMap<>();
         args.put("EVENT_TYPE", "PLAYBACK_PAUSED");
+
+        mChannel.invokeMethod("event", args);
+      } else if ( state.getState() == PlaybackStateCompat.STATE_NONE ){
+        Log.d(TAG, "Media state is NONE.");
+        HashMap<String, Object> args = new HashMap<>();
+        args.put("EVENT_TYPE", "PLAYBACK_STOPPED");
 
         mChannel.invokeMethod("event", args);
       }
