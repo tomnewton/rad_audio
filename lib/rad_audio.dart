@@ -110,7 +110,7 @@ class RadAudio {
       case "event":
         //print(call.method);
 
-        Map<String, dynamic> args = call.arguments;
+        Map<String, dynamic> args = (call.arguments as Map).cast<String, dynamic>();
         String eventType = args[EVENT_TYPE_KEY];
 
         if ( eventType == RadAudioEventTypes.READY_TO_PLAY ){
@@ -128,7 +128,7 @@ class RadAudio {
           player?.playbackStopped();
           _send({"eventType": eventType});
         } else if ( eventType == RadAudioEventTypes.SEEK_COMPLETE){
-          double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+          double pos = (args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION] as int).toDouble();
           player?.playbackProgress(pos);
           _send({"eventType": eventType, "position": pos});
         } else if ( eventType == RadAudioEventTypes.SEEKING){

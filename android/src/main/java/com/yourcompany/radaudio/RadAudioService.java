@@ -72,7 +72,7 @@ public class RadAudioService extends Service implements
         initChannels();
     }
 
-
+    @SuppressWarnings("deprecation")
     private void initPlayer(){
         mPlayer = new MediaPlayer();
 
@@ -81,9 +81,10 @@ public class RadAudioService extends Service implements
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .setLegacyStreamType(AudioManager.STREAM_MUSIC)
                     .build());
-        } else {
-            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        } else if (Build.VERSION.SDK_INT < 26) {
+            mPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC); //deprecated in API Level 26.
         }
+
         mPlayer.setOnPreparedListener(this);
         mPlayer.setOnCompletionListener(this);
         mPlayer.setOnErrorListener(this);
