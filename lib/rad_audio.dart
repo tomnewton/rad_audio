@@ -27,7 +27,7 @@ class RadAudioErrorTypes {
   static const String ASSET_PROPERTY_LOADING_ERROR = "ASSET_PROPERTY_LOADING_ERROR";
 }
 
-class RadAudioPrepareToPlayMsg{
+class RadAudioPrepareToPlayMsg {
   String imageUri;
   String audioUri;
   String titleText;
@@ -35,7 +35,7 @@ class RadAudioPrepareToPlayMsg{
 
   RadAudioPrepareToPlayMsg(this.audioUri, this.imageUri, this.titleText, this.subtitleText);
 
-  Map<String, String> toMap(){
+  Map<String, String> toMap() {
     return new Map<String, String>.from({
       "audioUri": this.audioUri,
       "imageUri": this.imageUri,
@@ -49,40 +49,25 @@ class RadAudio {
   IAudioPlayer player;
   StreamController _sc;
 
-  static const MethodChannel _channel =
-  const MethodChannel('rad_audio');
+  static const MethodChannel _channel = const MethodChannel('rad_audio');
 
-  /*static Future<String> get platformVersion =>
-      _channel.invokeMethod('getPlatformVersion');*/
+  static void play() => _channel.invokeMethod("play");
 
- /* static void prepareToPlay(RadAudioPrepareToPlayMsg msg) {
-    _channel.invokeMethod("prepareToPlay", [msg.toMap()]);
-  }*/
+  static void stop() => _channel.invokeMethod("stop");
 
+  static void pause() => _channel.invokeMethod("pause");
 
-  static void play() =>
-      _channel.invokeMethod("play");
+  static void seekDelta(int seconds) => _channel.invokeMethod("seekDelta", [seconds]);
 
-  static void stop() =>
-      _channel.invokeMethod("stop");
-
-  static void pause() =>
-      _channel.invokeMethod("pause");
-
-  static void seekDelta(int seconds) =>
-      _channel.invokeMethod("seekDelta", [seconds]);
-
-  static void seekToTime(int seconds) =>
-      _channel.invokeMethod("seekToTime", [seconds]);
+  static void seekToTime(int seconds) => _channel.invokeMethod("seekToTime", [seconds]);
 
   static RadAudio _singleton;
 
   //Private constructor.
   RadAudio._internal({this.player});
 
-
-  factory RadAudio({IAudioPlayer player}){
-    if (RadAudio._singleton != null){
+  factory RadAudio({IAudioPlayer player}) {
+    if (RadAudio._singleton != null) {
       return _singleton;
     }
     _singleton = new RadAudio._internal(player: player);
@@ -90,95 +75,79 @@ class RadAudio {
     return _singleton;
   }
 
-  Stream<dynamic> prepareToPlay(RadAudioPrepareToPlayMsg msg){
+  Stream<dynamic> prepareToPlay(RadAudioPrepareToPlayMsg msg) {
     _channel.invokeMethod("prepareToPlay", [msg.toMap()]);
-    if ( _sc != null ){
-      //_sc.add({"eventType": RadAudioEventTypes.PLAYBACK_STOPPED});
+    if (_sc != null) {
       _sc.close(); // we were playing something before... close the stream.
     }
-    _sc = new StreamController(onListen: onListen, onPause: onPause, onCancel: onCancel, onResume: onResume);
-    _sc.add({
-      "eventType": RadAudioEventTypes.PREPARING_TO_PLAY,
-      "message" : msg
-    });
+    _sc = new StreamController<RadAudioEvent>(
+        onListen: onListen, onPause: onPause, onCancel: onCancel, onResume: onResume);
+    _sc.add(new RAPreparingToPlayEvent.from(msg));
     return _sc.stream;
   }
 
   Future<dynamic> handler(MethodCall call) async {
-    //print("Heard a call!");
-    switch (call.method){
-      case "event":
-        //print(call.method);
+    Map<String, dynamic> args = (call.arguments as Map).cast<String, dynamic>();
+    String eventType = args[EVENT_TYPE_KEY];
 
-        Map<String, dynamic> args = (call.arguments as Map).cast<String, dynamic>();
-        String eventType = args[EVENT_TYPE_KEY];
-
-        if ( eventType == RadAudioEventTypes.READY_TO_PLAY ){
-          double duration = args[RadAudioArgKeys.DURATION];
-          player?.readyToPlay(duration);
-          _send({"eventType": eventType, RadAudioArgKeys.DURATION: duration});
-        } else if ( eventType == RadAudioEventTypes.PROGRESS_EVENT ){
-          double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
-          _send({"eventType": eventType, RadAudioArgKeys.CURRENT_PLAYBACK_POSITION: pos.toDouble()});
-          player?.playbackProgress(pos.toDouble());
-        } else if ( eventType == RadAudioEventTypes.PLAYBACK_STARTED ){
-          player?.playbackStarted();
-          _send({"eventType": eventType});
-        } else if ( eventType == RadAudioEventTypes.PLAYBACK_STOPPED ){
-          player?.playbackStopped();
-          _send({"eventType": eventType});
-        } else if ( eventType == RadAudioEventTypes.SEEK_COMPLETE){
-          double pos = (args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION] as int).toDouble();
-          player?.playbackProgress(pos);
-          _send({"eventType": eventType, "position": pos});
-        } else if ( eventType == RadAudioEventTypes.SEEKING){
-          player?.isSeeking(true);
-          _send({"eventType": eventType});
-        } else if ( eventType == RadAudioEventTypes.SEEK_COMPLETE){
-          player?.isSeeking(false);
-          _send({"eventType": eventType});
-        } else if ( eventType == RadAudioEventTypes.PAUSED ){
-          player?.playbackPaused();
-          _send({"eventType": eventType});
-        }
+    switch (eventType) {
+      case RadAudioEventTypes.READY_TO_PLAY:
+        double duration = args[RadAudioArgKeys.DURATION];
+        player?.readyToPlay(duration);
+        RAReadyToPlayEvent evt = new RAReadyToPlayEvent.from(args);
+        _send(evt);
+        break;
+      case RadAudioEventTypes.PROGRESS_EVENT:
+        double pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+        RAProgressEvent evt = new RAProgressEvent.from(args);
+        _send(evt);
+        player?.playbackProgress(pos);
+        break;
+      case RadAudioEventTypes.PLAYBACK_STARTED:
+        player?.playbackStarted();
+        _send(new RAPlaybackStartedEvent());
+        break;
+      case RadAudioEventTypes.PLAYBACK_STOPPED:
+        player?.playbackStopped();
+        _send(new RAPlaybackStoppedEvent());
+        break;
+      case RadAudioEventTypes.SEEK_COMPLETE:
+        int pos = args[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+        player?.playbackProgress(pos.toDouble());
+        _send(new RAProgressEvent.from(args));
+        break;
+      case RadAudioEventTypes.SEEKING:
+        player?.isSeeking(true);
+        _send(new RASeekingEvent());
+        break;
+      case RadAudioEventTypes.PAUSED:
+        player?.playbackPaused();
+        _send(new RAPausedEvent());
         break;
       default:
         break;
     }
-    return new Future(()=>true);
+    return null;
   }
 
-  void onListen(){
+  void onListen() {}
 
-  }
+  void onCancel() {}
 
-  void onCancel(){
+  void onPause() {}
 
-  }
+  void onResume() {}
 
-  void onPause(){
+  void onSubscriptionListen(StreamSubscription<dynamic> s) {}
 
-  }
+  void onSubscriptionCancel(StreamSubscription<dynamic> s) {}
 
-  void onResume(){
-
-  }
-
-  void onSubscriptionListen(StreamSubscription<dynamic> s){
-
-  }
-
-  void onSubscriptionCancel(StreamSubscription<dynamic> s){
-
-  }
-
-  void _send(dynamic event){
+  void _send(RadAudioEvent event) {
     if (_sc.hasListener) {
       _sc.add(event);
     }
   }
 }
-
 
 abstract class IAudioPlayer {
   void readyToPlay(double duration);
@@ -187,4 +156,33 @@ abstract class IAudioPlayer {
   void playbackStarted();
   void playbackStopped();
   void playbackPaused();
+}
+
+// The API ( Stream ) now sends RadAudioEvents.
+abstract class RadAudioEvent {}
+
+class RAPlaybackStartedEvent extends RadAudioEvent {}
+
+class RAPlaybackStoppedEvent extends RadAudioEvent {}
+
+class RAReadyToPlayEvent extends RadAudioEvent {
+  final double duration;
+  RAReadyToPlayEvent.from(Map<String, dynamic> arguments) : this.duration = arguments[RadAudioArgKeys.DURATION];
+}
+
+class RAProgressEvent extends RadAudioEvent {
+  final double position;
+  RAProgressEvent.from(Map<String, dynamic> arguments)
+      : this.position = arguments[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+}
+
+class RASeekCompleteEvent extends RadAudioEvent {}
+
+class RASeekingEvent extends RadAudioEvent {}
+
+class RAPausedEvent extends RadAudioEvent {}
+
+class RAPreparingToPlayEvent extends RadAudioEvent {
+  final RadAudioPrepareToPlayMsg msg;
+  RAPreparingToPlayEvent.from(this.msg);
 }

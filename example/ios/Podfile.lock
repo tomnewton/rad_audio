@@ -8,15 +8,15 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `/Users/tn/workspace/sdks/flutter/bin/cache/artifacts/engine/ios`)
   - path_provider (from `/Users/tn/.pub-cache/hosted/pub.dartlang.org/path_provider-0.3.1/ios`)
-  - rad_audio (from `/Users/tn/workspace/dart/rad_audio/ios`)
+  - rad_audio (from `/Users/tn/workspace/lstn/deps/rad_audio/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
-    :path: /Users/tn/workspace/sdks/flutter/bin/cache/artifacts/engine/ios
+    :path: "/Users/tn/workspace/sdks/flutter/bin/cache/artifacts/engine/ios"
   path_provider:
-    :path: /Users/tn/.pub-cache/hosted/pub.dartlang.org/path_provider-0.3.1/ios
+    :path: "/Users/tn/.pub-cache/hosted/pub.dartlang.org/path_provider-0.3.1/ios"
   rad_audio:
-    :path: /Users/tn/workspace/dart/rad_audio/ios
+    :path: "/Users/tn/workspace/lstn/deps/rad_audio/ios"
 
 SPEC CHECKSUMS:
   Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
@@ -25,4 +25,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 351e02e34b831289961ec3558a535cbd2c4965d2
 
-COCOAPODS: 1.4.0
+COCOAPODS: 1.5.3
