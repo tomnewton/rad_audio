@@ -1,4 +1,4 @@
-group 'com.yourcompany.radaudio'
+group 'com.yyztom.radaudio'
 version '1.0-SNAPSHOT'
 
 buildscript {

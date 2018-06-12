@@ -1,5 +1,5 @@
 
-package com.yourcompany.radaudio;
+package com.yyztom.radaudio;
 
 import android.app.Activity;
 import android.app.Application;
@@ -28,7 +28,6 @@ import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
-
 
 import io.flutter.app.FlutterActivity;
 import io.flutter.app.FlutterApplication;

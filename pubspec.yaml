@@ -1,6 +1,6 @@
 name: rad_audio
 description: A new flutter plugin project.
-version: 0.0.1
+version: 0.0.2
 author: Tom Newton
 homepage:
 
@@ -14,7 +14,7 @@ dependencies:
 # The following section is specific to Flutter.
 flutter:
   plugin:
-    androidPackage: com.yourcompany.radaudio
+    androidPackage: com.yyztom.radaudio
     pluginClass: RadAudioPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
