@@ -122,7 +122,7 @@ class RadAudio {
         break;
       case RadAudioEventTypes.PAUSED:
         player?.playbackPaused();
-        _send(new RAPausedEvent());
+        _send(new RAPlaybackPausedEvent());
         break;
       default:
         break;
@@ -160,6 +160,11 @@ abstract class IAudioPlayer {
 
 // The API ( Stream ) now sends RadAudioEvents.
 abstract class RadAudioEvent {}
+class RAPositionChangedEvent extends RadAudioEvent {
+  final double position;
+  RAPositionChangedEvent.from(Map<String, dynamic> arguments)
+      : this.position = arguments[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+}
 
 class RAPlaybackStartedEvent extends RadAudioEvent {}
 
@@ -170,17 +175,17 @@ class RAReadyToPlayEvent extends RadAudioEvent {
   RAReadyToPlayEvent.from(Map<String, dynamic> arguments) : this.duration = arguments[RadAudioArgKeys.DURATION];
 }
 
-class RAProgressEvent extends RadAudioEvent {
-  final double position;
-  RAProgressEvent.from(Map<String, dynamic> arguments)
-      : this.position = arguments[RadAudioArgKeys.CURRENT_PLAYBACK_POSITION];
+class RAProgressEvent extends RAPositionChangedEvent {
+  RAProgressEvent.from(Map<String, dynamic> arguments) : super.from(arguments);
 }
 
-class RASeekCompleteEvent extends RadAudioEvent {}
+class RASeekCompleteEvent extends RAPositionChangedEvent {
+  RASeekCompleteEvent.from(Map<String, dynamic> arguments) : super.from(arguments);
+}
 
 class RASeekingEvent extends RadAudioEvent {}
 
-class RAPausedEvent extends RadAudioEvent {}
+class RAPlaybackPausedEvent extends RadAudioEvent {}
 
 class RAPreparingToPlayEvent extends RadAudioEvent {
   final RadAudioPrepareToPlayMsg msg;
