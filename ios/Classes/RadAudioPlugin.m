@@ -267,14 +267,7 @@ typedef enum {
         if ( finished ){
                 [weakSelf updateControllerElapsedTime:YES];
             
-            NSString* argKey = [weakSelf FormatRadAudioArgKeyToString:kCurrentPlaybackPosition];
             
-            NSString* eventName = [weakSelf formatRadAudioEventsToString:kSeekComplete];
-            double position = newTime.value / newTime.timescale;
-            
-            NSDictionary* args = @{@"EVENT_TYPE": eventName, argKey: [NSNumber numberWithDouble:position]};
-            
-           // [weakSelf.channel invokeMethod:@"event" arguments:args];
             [weakSelf sendEventToFlutter:kSeekComplete
                                withArguments:[NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:newTime.value/newTime.timescale], [self FormatRadAudioArgKeyToString:kCurrentPlaybackPosition], nil]];
             
