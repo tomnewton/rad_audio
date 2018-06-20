@@ -98,6 +98,7 @@ typedef enum {
     {
         self.channel = chan;
         self.infoCenter = [MPNowPlayingInfoCenter defaultCenter];
+        self.player = [[AVPlayer alloc] init];
         
         __weak RadAudioPlugin *weakSelf = self;
         self.progressBloc = ^(CMTime t){
@@ -317,11 +318,10 @@ typedef enum {
 -(void)stop{
     if ( self.player.error == false ){
         [self.player pause];
-        if ( self.timeObserver != nil ){
+        if ( self.timeObserver != nil ) {
             [self.player removeTimeObserver:self.timeObserver];
             self.timeObserver = nil;
         }
-        self.player = nil;
         [self sendEventToFlutter:kPlaybackStopped];
         
         if(@available(iOS 11, *)){
@@ -375,13 +375,16 @@ typedef enum {
     
     AVPlayerItem* item = [AVPlayerItem playerItemWithAsset:asset automaticallyLoadedAssetKeys:assetKeys];
     
-    self.player = [AVPlayer playerWithPlayerItem:item];
+    [self.player replaceCurrentItemWithPlayerItem:item]; //self.player = [AVPlayer playerWithPlayerItem:item];
     if(@available(iOS 10.0, *)){
         [self.player setAutomaticallyWaitsToMinimizeStalling:false];
     }
     
     //listen for when the playback has ended for the current item.
-     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(handleDidPlayToEnd:) name:AVPlayerItemDidPlayToEndTimeNotification object:self.player.currentItem];
+    [NSNotificationCenter.defaultCenter addObserver:self
+                                           selector:@selector(handleDidPlayToEnd:)
+                                               name:AVPlayerItemDidPlayToEndTimeNotification
+                                             object:self.player.currentItem];
     
     MPMediaItemArtwork *artwork;
     
