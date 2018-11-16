@@ -4,6 +4,9 @@ version: 0.0.2
 author: Tom Newton
 homepage:
 
+environment:
+  sdk: "<3.0.0"
+
 dependencies:
   flutter:
     sdk: flutter
