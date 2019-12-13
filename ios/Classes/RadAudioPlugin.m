@@ -154,12 +154,14 @@ typedef enum {
  
 }
 
--(void)seekForwardFromRemote{
+-(MPRemoteCommandHandlerStatus)seekForwardFromRemote{
     [self seekDelta:[NSNumber numberWithInt:15]];
+    return MPRemoteCommandHandlerStatusSuccess;
 }
 
--(void)seekBackwardFromRemote{
+-(MPRemoteCommandHandlerStatus)seekBackwardFromRemote{
     [self seekDelta:[NSNumber numberWithInt:-15]];
+    return MPRemoteCommandHandlerStatusSuccess;
 }
 
 
@@ -279,7 +281,7 @@ typedef enum {
     }];
 }
 
--(void)play{
+-(MPRemoteCommandHandlerStatus)play{
     if ( self.session == nil ){
         [self setupAudioSession];
         [self setupCommandCenter];
@@ -287,7 +289,7 @@ typedef enum {
     
     [self updateControllerElapsedTime:YES];
     
-    if(@available(iOS 11, *)){
+    if(@available(iOS 13, *)){
         [self.infoCenter setPlaybackState:MPNowPlayingPlaybackStatePlaying];
     }
     
@@ -295,7 +297,6 @@ typedef enum {
         [self.player setRate:1.0f];
         self.isPaused = false;
         [self sendEventToFlutter:kPlaybackStarted];
-        return;
     }
     
     [self.player play];
@@ -310,12 +311,14 @@ typedef enum {
     if ( self.timeObserver == nil ){
         self.timeObserver = [self.player addPeriodicTimeObserverForInterval:interval queue:mainQueue usingBlock:self.progressBloc];
     }
+    
+    return MPRemoteCommandHandlerStatusSuccess;
 }
 
 
 
 
--(void)stop{
+-(MPRemoteCommandHandlerStatus)stop{
     if ( self.player.error == false ){
         [self.player pause];
         if ( self.timeObserver != nil ) {
@@ -324,33 +327,36 @@ typedef enum {
         }
         [self sendEventToFlutter:kPlaybackStopped];
         
-        if(@available(iOS 11, *)){
+        if(@available(iOS 13, *)){
             [self.infoCenter setPlaybackState:MPNowPlayingPlaybackStateStopped];
         }
         
         [[UIApplication sharedApplication] endReceivingRemoteControlEvents];
         
-        return;
+        return MPRemoteCommandHandlerStatusSuccess;
     }
     
     //Send an error.
     [self sendErrorMessageToFlutter:@"Couldn't stop the player. Either not playing or player.error was true." andCode:kPlayerBadState];
+    return MPRemoteCommandHandlerStatusCommandFailed;
 }
 
--(void)pause {
+-(MPRemoteCommandHandlerStatus)pause {
     if (self.player.rate > 0 && self.player.error == false){
         [self.player pause];
         self.isPaused = true;
        
         [self updateControllerElapsedTime:NO];
-        if(@available(iOS 11, *)){
+        if(@available(iOS 13, *)){
             [self.infoCenter setPlaybackState:MPNowPlayingPlaybackStatePaused];
         }
         
         [self sendEventToFlutter:kPaused withArguments:nil];
+        return MPRemoteCommandHandlerStatusSuccess;
         
     } else {
         [self sendErrorMessageToFlutter:@"Pause when nothing is playing" andCode:kPlayerBadState];
+        return MPRemoteCommandHandlerStatusCommandFailed;
     }
 }
 
